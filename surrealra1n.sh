@@ -2827,10 +2827,9 @@ if [[ -z "$SHSH_PATH" ]]; then
     echo "No SHSH file found in the shsh folder. Aborting"
     exit 1
 fi
-mkdir -p futurerestore_cache
 while true; do
     set +e
-    sudo ./futurerestore/futurerestore --cache-path futurerestore_cache -t "$SHSH_PATH" $rsep_flag --latest-sep $updatebb_flag "$restoredir/custom.ipsw"
+    sudo ./futurerestore/futurerestore -t "$SHSH_PATH" $rsep_flag --latest-sep $updatebb_flag "$restoredir/custom.ipsw"
     EXIT_CODE=$?
     set -e
     if [[ $EXIT_CODE -eq 139 ]]; then
@@ -2961,11 +2960,10 @@ fi
 mkdir -p boot
 echo "$VERSION" > boot/$ECID.txt
 
-mkdir -p futurerestore_cache
 echo "Restoring stock IPSW using SHSH blob: $SHSH_PATH"
 while true; do
     set +e
-    sudo ./futurerestore/futurerestore --cache-path futurerestore_cache -t "$SHSH_PATH" $rsep_flag --latest-sep $updatebb_flag "$IPSW_PATH"
+    sudo ./futurerestore/futurerestore -t "$SHSH_PATH" $rsep_flag --latest-sep $updatebb_flag "$IPSW_PATH"
     EXIT_CODE=$?
     set -e
     if [[ $EXIT_CODE -eq 139 ]]; then
