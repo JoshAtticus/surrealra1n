@@ -1,2 +1,4 @@
 bin/*
 !bin/notice.txt
+blobs/*
+!blobs/notice.txt
