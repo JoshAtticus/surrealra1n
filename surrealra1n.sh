@@ -2939,7 +2939,15 @@ if [[ -n "$GENERATOR" ]]; then
     if [[ -n "$IBSS_FILE" && -n "$IBSS_KEY" ]]; then
         ./bin/img4 -i "$IBSS_FILE" -o work/iBSS.raw -k "$IBSS_KEY" || true
         ./bin/iBootPatch work/iBSS.raw boot/$IDENTIFIER/iBSS.patch -g "$GENERATOR" || true
-        echo "Successfully patched iBSS with generator $GENERATOR"
+        if [[ -f "boot/$IDENTIFIER/iBSS.patch" ]]; then
+            echo "Successfully patched iBSS with generator $GENERATOR"
+        else
+            echo "Failed to create boot/$IDENTIFIER/iBSS.patch!"
+            exit 1
+        fi
+    else
+        echo "Could not find iBSS file or iBSS decryption key in $KEY_FILE"
+        exit 1
     fi
     rm -rf work
 fi

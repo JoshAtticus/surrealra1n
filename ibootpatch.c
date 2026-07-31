@@ -250,8 +250,8 @@ static int patch_iboot_signature_check(uint8_t *buf, size_t len)
     if (result <= 0)
         return result;
 
-    printf("[-] unsupported arm64e iBoot property callback\n");
-    return -1;
+    printf("[*] No ASN1 property callback in iBSS (skipping signature patch)\n");
+    return 0;
 }
 
 static int patch_iboot_generator(uint8_t *buf, size_t len, const char *generator)
