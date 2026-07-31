@@ -2874,7 +2874,7 @@ if [[ -z "$SHSH_PATH" ]]; then
 fi
 while true; do
     set +e
-    sudo ./futurerestore/futurerestore -t $SHSH_PATH $rsep_flag --latest-sep $updatebb_flag $restoredir/custom.ipsw
+    sudo ./futurerestore/futurerestore -t "$SHSH_PATH" $rsep_flag --latest-sep $updatebb_flag "$restoredir/custom.ipsw"
     EXIT_CODE=$?
     set -e
     if [[ $EXIT_CODE -eq 139 ]]; then
@@ -3034,7 +3034,7 @@ fi
 echo "Restoring using SHSH blob: $SHSH_PATH"
 while true; do
     set +e
-    sudo ./futurerestore/futurerestore -t $SHSH_PATH $rsep_flag --latest-sep $updatebb_flag $restoredir/custom.ipsw
+    sudo ./futurerestore/futurerestore -t "$SHSH_PATH" $rsep_flag --latest-sep $updatebb_flag "$restoredir/custom.ipsw"
     EXIT_CODE=$?
     set -e
     if [[ $EXIT_CODE -eq 139 ]]; then
