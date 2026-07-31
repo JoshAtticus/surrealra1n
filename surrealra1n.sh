@@ -2952,10 +2952,21 @@ fi
 APNONCE=$(./bin/irecovery -q | grep "^NONC:" | cut -d ':' -f2 | xargs)
 ECID=$(./bin/irecovery -q | grep "^ECID:" | cut -d ':' -f2 | xargs)
 GENERATOR=$(extract_generator "$SHSH_PATH")
-echo "Device APNonce: $APNONCE"
+echo "Original Device APNonce: $APNONCE"
 echo "Device ECID: $ECID"
 if [[ -n "$GENERATOR" ]]; then
-    echo "Blob Generator: $GENERATOR"
+    echo "Setting nonce in NVRAM, blob generator: $GENERATOR"
+    ./bin/irecovery -c "setenv com.apple.System.boot-nonce $GENERATOR"
+    ./bin/irecovery -c "saveenv"
+    ./bin/irecovery -c "setenv auto-boot false"
+    ./bin/irecovery -c "saveenv"
+    sleep 4
+    ./bin/irecovery -c "reboot" || true
+    sleep 6
+    APNONCE=$(./bin/irecovery -q | grep "^NONC:" | cut -d ':' -f2 | xargs 2>/dev/null || true)
+    if [[ -n "$APNONCE" ]]; then
+        echo "Updated Device APNonce: $APNONCE"
+    fi
 fi
 mkdir -p boot
 echo "$VERSION" > boot/$ECID.txt
