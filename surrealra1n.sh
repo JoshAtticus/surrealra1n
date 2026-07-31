@@ -1558,8 +1558,8 @@ reset_restore_vars() {
 
 extract_generator() {
     local blob_path="$1"
-    if [[ -f "$blob_path" ]]; then
-        grep -A1 "<key>generator</key>" "$blob_path" 2>/dev/null | grep -o '0x[0-9a-fA-F]*' | head -n 1
+    if [[ -n "$blob_path" && -f "$blob_path" ]]; then
+        (grep -A1 "<key>generator</key>" "$blob_path" 2>/dev/null | grep -o '0x[0-9a-fA-F]*' 2>/dev/null | head -n 1) || true
     fi
 }
 
@@ -2928,7 +2928,7 @@ fi
 pwn_device
 det_rsep_flag
 
-GENERATOR=$(extract_generator "$SHSH_PATH")
+GENERATOR=$(extract_generator "$SHSH_PATH" 2>/dev/null || true)
 if [[ -n "$GENERATOR" ]]; then
     echo "Extracted generator from blob: $GENERATOR"
     echo "Building generator-patched iBSS..."
@@ -2937,11 +2937,11 @@ if [[ -n "$GENERATOR" ]]; then
     rm -rf work
     mkdir -p work
     mkdir -p boot/$IDENTIFIER
-    unzip -j "$IPSW_PATH" "Firmware/dfu/*iBSS*" -d work
-    IBSS_FILE=$(ls work/*iBSS* 2>/dev/null | head -n 1)
+    unzip -j "$IPSW_PATH" "Firmware/dfu/*iBSS*" -d work || true
+    IBSS_FILE=$(ls work/*iBSS* 2>/dev/null | head -n 1 || true)
     if [[ -n "$IBSS_FILE" && -n "$IBSS_KEY" ]]; then
-        ./bin/img4 -i "$IBSS_FILE" -o work/iBSS.raw -k "$IBSS_KEY"
-        ./bin/iBootPatch work/iBSS.raw boot/$IDENTIFIER/iBSS.patch -g "$GENERATOR"
+        ./bin/img4 -i "$IBSS_FILE" -o work/iBSS.raw -k "$IBSS_KEY" || true
+        ./bin/iBootPatch work/iBSS.raw boot/$IDENTIFIER/iBSS.patch -g "$GENERATOR" || true
         echo "Successfully patched iBSS with generator $GENERATOR"
     fi
     rm -rf work
