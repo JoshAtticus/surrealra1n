@@ -2830,7 +2830,7 @@ fi
 mkdir -p futurerestore_cache
 while true; do
     set +e
-    sudo ./futurerestore/futurerestore --use-cache --cache-path futurerestore_cache -t "$SHSH_PATH" $rsep_flag --latest-sep $updatebb_flag "$restoredir/custom.ipsw"
+    sudo ./futurerestore/futurerestore --cache-path futurerestore_cache -t "$SHSH_PATH" $rsep_flag --latest-sep $updatebb_flag "$restoredir/custom.ipsw"
     EXIT_CODE=$?
     set -e
     if [[ $EXIT_CODE -eq 139 ]]; then
@@ -2965,7 +2965,7 @@ mkdir -p futurerestore_cache
 echo "Restoring stock IPSW using SHSH blob: $SHSH_PATH"
 while true; do
     set +e
-    sudo ./futurerestore/futurerestore --use-cache --cache-path futurerestore_cache -t "$SHSH_PATH" $rsep_flag --latest-sep $updatebb_flag "$IPSW_PATH"
+    sudo ./futurerestore/futurerestore --cache-path futurerestore_cache -t "$SHSH_PATH" $rsep_flag --latest-sep $updatebb_flag "$IPSW_PATH"
     EXIT_CODE=$?
     set -e
     if [[ $EXIT_CODE -eq 139 ]]; then
