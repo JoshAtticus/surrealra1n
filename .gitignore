@@ -2,3 +2,5 @@ bin/*
 !bin/notice.txt
 blobs/*
 !blobs/notice.txt
+futurerestore_cache/*
+!futurerestore_cache/notice.txt
