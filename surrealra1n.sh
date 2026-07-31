@@ -2926,7 +2926,9 @@ pwn_device
 det_rsep_flag
 
 GENERATOR=$(extract_generator "$SHSH_PATH" 2>/dev/null || true)
-if [[ -n "$GENERATOR" ]]; then
+if [[ -f "boot/$IDENTIFIER/iBSS.patch" ]]; then
+    echo "Found pre-patched iBSS at boot/$IDENTIFIER/iBSS.patch, skipping build and using existing file."
+elif [[ -n "$GENERATOR" ]]; then
     echo "Extracted generator from blob: $GENERATOR"
     echo "Building generator-patched iBSS..."
     KEY_FILE="keys/$IDENTIFIER.txt"

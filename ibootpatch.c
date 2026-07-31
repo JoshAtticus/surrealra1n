@@ -36,9 +36,11 @@ static addr_t xref64(const uint8_t *buf, addr_t start, addr_t end, addr_t what)
         unsigned reg = op & 0x1F;
 
         if ((op & 0x9F000000) == 0x90000000) {
-            signed adr = ((op & 0x60000000) >> 18) |
-                         ((op & 0xFFFFE0) << 8);
-            value[reg] = ((long long)adr << 1) + (i & ~0xFFFULL);
+            int64_t immlo = (op >> 29) & 3;
+            int64_t immhi = (op >> 5) & 0x7FFFF;
+            int64_t imm = (immhi << 2) | immlo;
+            if (imm & 0x100000) imm -= 0x200000;
+            value[reg] = ((int64_t)(i & ~0xFFFULL)) + (imm << 12);
             continue;
         }
         if ((op & 0xFF000000) == 0x91000000) {
@@ -57,12 +59,15 @@ static addr_t xref64(const uint8_t *buf, addr_t start, addr_t end, addr_t what)
                 continue;
             value[reg] = value[rn] + imm;
         } else if ((op & 0x9F000000) == 0x10000000) {
-            signed adr = ((op & 0x60000000) >> 18) |
-                         ((op & 0xFFFFE0) << 8);
-            value[reg] = ((long long)adr >> 11) + i;
+            int64_t immlo = (op >> 29) & 3;
+            int64_t immhi = (op >> 5) & 0x7FFFF;
+            int64_t imm = (immhi << 2) | immlo;
+            if (imm & 0x100000) imm -= 0x200000;
+            value[reg] = ((int64_t)i) + imm;
         } else if ((op & 0xFF000000) == 0x58000000) {
-            unsigned adr = (op & 0xFFFFE0) >> 3;
-            value[reg] = adr + i;
+            int64_t imm = (op & 0x00FFFFE0) >> 3;
+            if (imm & 0x80000) imm -= 0x100000;
+            value[reg] = i + imm;
         }
 
         if (value[reg] == what)
@@ -257,29 +262,39 @@ static int patch_iboot_signature_check(uint8_t *buf, size_t len)
 static int patch_iboot_generator(uint8_t *buf, size_t len, const char *generator)
 {
     const char *needle = "com.apple.System.boot-nonce";
-    void *str_ref = memmem(buf, len, needle, strlen(needle));
-    addr_t str_off;
-    addr_t xref;
-    uint32_t *bl_insn;
+    size_t needle_len = strlen(needle);
+    uint8_t *str_ref = NULL;
+    addr_t str_off = 0;
+    addr_t xref = 0;
+    uint32_t *bl_insn = NULL;
+    size_t i;
 
-    if (!str_ref || !generator || strlen(generator) == 0) {
-        printf("[-] boot-nonce string not found or no generator provided\n");
+    for (i = 0; i + needle_len + 1 <= len; i++) {
+        if (memcmp(buf + i, needle, needle_len) == 0 && buf[i + needle_len] == 0) {
+            addr_t test_xref = xref64(buf, 0, len, i);
+            if (test_xref) {
+                str_ref = buf + i;
+                str_off = i;
+                xref = test_xref;
+                break;
+            }
+        }
+    }
+
+    if (!str_ref || !xref || !generator || strlen(generator) == 0) {
+        printf("[-] boot-nonce string or xref not found in iBSS\n");
         return -1;
     }
 
-    str_off = (uintptr_t)str_ref - (uintptr_t)buf;
     printf("[+] found boot-nonce string @ buf+0x%llx\n", (unsigned long long)str_off);
-
-    xref = xref64(buf, 0, len, str_off);
-    if (!xref) {
-        printf("[-] no xref to boot-nonce string found\n");
-        return -1;
-    }
     printf("[+] xref to boot-nonce @ buf+0x%llx\n", (unsigned long long)xref);
 
     bl_insn = find_next_insn((uint32_t *)(buf + xref), 0x20, 0x94000000, 0xFC000000);
     if (!bl_insn) {
-        printf("[-] no BL call found after boot-nonce xref\n");
+        bl_insn = find_next_insn((uint32_t *)(buf + xref), 0x20, 0xD63F0000, 0xFFFFFC1F);
+    }
+    if (!bl_insn) {
+        printf("[-] no BL/BLR call found after boot-nonce xref\n");
         return -1;
     }
     printf("[+] env_get BL @ buf+0x%llx\n", (unsigned long long)((uintptr_t)bl_insn - (uintptr_t)buf));
