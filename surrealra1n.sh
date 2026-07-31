@@ -1874,86 +1874,41 @@ echo "Options:"
 echo ""
 echo "1. Select Target IPSW"
 echo "2. Select SHSH"
-if [[ $IDENTIFIER == iPhone11* || $IDENTIFIER == iPhone12* || $IDENTIFIER == iPad11* ]]; then
-    echo "3. Select Base IPSW (iOS $LATEST_VERSION)"
-    echo "4. Start Restore"
-    echo "5. Back"
-    read -p "Please input an option (1-5): " untether_options
-    if [[ $untether_options == 1 ]]; then
-        IPSW_PATH=$(pick_file "Select an IPSW file")
-        if [[ -z "$IPSW_PATH" ]]; then
-            echo "No IPSW selected. Aborting."
-            exit 1
-        fi
-        unzip -j "$IPSW_PATH" "BuildManifest.plist" -d work
-        BUILD=$(grep -A1 "ProductBuildVersion" work/BuildManifest.plist | grep -o '<string>[^<]*</string>' | head -1 | sed 's/<[^>]*>//g')
-        VERSION=$(grep -A1 "ProductVersion" work/BuildManifest.plist | grep -o '<string>[^<]*</string>' | head -1 | sed 's/<[^>]*>//g')
-        restore_untethered_opts
-    elif [[ $untether_options == 2 ]]; then
-        SHSH_PATH=$(pick_file "Select an SHSH2 file")
-        if [[ -z "$SHSH_PATH" ]]; then
-            echo "No SHSH blob selected. Aborting."
-            exit 1
-        fi
-        echo "An SHSH blob is selected. Please ensure this blob is valid for iOS $VERSION, otherwise the restore will likely fail"
-        read -p "Press enter to continue"
-        restore_untethered_opts
-    elif [[ $untether_options == 3 ]]; then
-        IPSW_PATH_LATEST=$(pick_file "Select iOS $LATEST_VERSION IPSW file")
-        if [[ -z "$IPSW_PATH_LATEST" ]]; then
-            echo "No IPSW selected. Aborting."
-            exit 1
-        fi
-        rm -rf work/BuildManifest.plist
-        unzip -j "$IPSW_PATH_LATEST" "BuildManifest.plist" -d work
-        VERSION_LATEST=$(grep -A1 "ProductVersion" work/BuildManifest.plist | grep -o '<string>[^<]*</string>' | head -1 | sed 's/<[^>]*>//g')
-        if [[ $VERSION_LATEST != $LATEST_VERSION ]]; then
-            echo "Invalid IPSW. You must select IPSW for iOS $LATEST_VERSION, not iOS $VERSION_LATEST"
-            exit 1
-        fi
-        restore_untethered_opts
-    elif [[ $untether_options == 4 ]]; then
-        do_untethered_restore_a12_a13
-    elif [[ $untether_options == 5 ]]; then
-        reset_restore_vars
-        restore_utils
-    else
-        echo "Invalid option. Exiting."
+echo "3. Start Restore"
+echo "4. Back"
+read -p "Please input an option (1-4): " untether_options
+if [[ $untether_options == 1 ]]; then
+    IPSW_PATH=$(pick_file "Select an IPSW file")
+    if [[ -z "$IPSW_PATH" ]]; then
+        echo "No IPSW selected. Aborting."
         exit 1
     fi
-else
-    echo "3. Start Restore"
-    echo "4. Back"
-    read -p "Please input an option (1-4): " untether_options
-    if [[ $untether_options == 1 ]]; then
-        IPSW_PATH=$(pick_file "Select an IPSW file")
-        if [[ -z "$IPSW_PATH" ]]; then
-            echo "No IPSW selected. Aborting."
-            exit 1
-        fi
-        unzip -j "$IPSW_PATH" "BuildManifest.plist" -d work
-        BUILD=$(grep -A1 "ProductBuildVersion" work/BuildManifest.plist | grep -o '<string>[^<]*</string>' | head -1 | sed 's/<[^>]*>//g')
-        VERSION=$(grep -A1 "ProductVersion" work/BuildManifest.plist | grep -o '<string>[^<]*</string>' | head -1 | sed 's/<[^>]*>//g')
-        restore_untethered_opts
-    elif [[ $untether_options == 2 ]]; then
-        SHSH_PATH=$(pick_file "Select an SHSH2 file")
-        if [[ -z "$SHSH_PATH" ]]; then
-            echo "No SHSH blob selected. Aborting."
-            exit 1
-        fi
-        echo "An SHSH blob is selected. Please ensure this blob is valid for iOS $VERSION, otherwise the restore will likely fail"
-        read -p "Press enter to continue"
-        restore_untethered_opts
-    elif [[ $untether_options == 3 ]]; then
+    unzip -j "$IPSW_PATH" "BuildManifest.plist" -d work
+    BUILD=$(grep -A1 "ProductBuildVersion" work/BuildManifest.plist | grep -o '<string>[^<]*</string>' | head -1 | sed 's/<[^>]*>//g')
+    VERSION=$(grep -A1 "ProductVersion" work/BuildManifest.plist | grep -o '<string>[^<]*</string>' | head -1 | sed 's/<[^>]*>//g')
+    restore_untethered_opts
+elif [[ $untether_options == 2 ]]; then
+    SHSH_PATH=$(pick_file "Select an SHSH2 file")
+    if [[ -z "$SHSH_PATH" ]]; then
+        echo "No SHSH blob selected. Aborting."
+        exit 1
+    fi
+    echo "An SHSH blob is selected. Please ensure this blob is valid for iOS $VERSION, otherwise the restore will likely fail"
+    read -p "Press enter to continue"
+    restore_untethered_opts
+elif [[ $untether_options == 3 ]]; then
+    if [[ $IDENTIFIER == iPhone11* || $IDENTIFIER == iPhone12* || $IDENTIFIER == iPad11* ]]; then
+        do_untethered_restore_a12_a13
+    else
         sep_checker
         restore_with_blobs
-    elif [[ $untether_options == 4 ]]; then
-        reset_restore_vars
-        restore_utils
-    else
-        echo "Invalid option. Exiting."
-        exit 1
     fi
+elif [[ $untether_options == 4 ]]; then
+    reset_restore_vars
+    restore_utils
+else
+    echo "Invalid option. Exiting."
+    exit 1
 fi
 
 }
@@ -2981,19 +2936,6 @@ fi
 pwn_device
 det_rsep_flag
 
-restoredir="restorefiles/$IDENTIFIER/$VERSION"
-
-if [[ ! -f "$restoredir/custom.ipsw" ]]; then
-    echo "Restore files does not exist, making new ones"
-    make_custom_ipsw_a12_ios14
-else
-    echo "Restore files already exist"
-    read -p "Would you like to make new ones? (y/n): " restorefiles_remake
-    if [[ $restorefiles_remake == Y || $restorefiles_remake == y ]]; then
-        rm -rf "$restoredir"
-        make_custom_ipsw_a12_ios14
-    fi
-fi
 curl -L -o bin/liter8ctl https://github.com/ahmadkamal09999-tech/usbliter8/raw/refs/heads/main/usbliter8ctl
 if [[ $dist == 1 || $dist == 2 || $dist == 5 ]]; then
     python3 bin/liter8ctl boot boot/$IDENTIFIER/iBSS.patch || true
@@ -3025,16 +2967,11 @@ if [[ -n "$GENERATOR" ]]; then
 fi
 mkdir -p boot
 echo "$VERSION" > boot/$ECID.txt
-if [[ $IDENTIFIER == iPhone12,8 ]]; then
-    sudo LD_LIBRARY_PATH="lib" ./bin/idevicerestore -ey $restoredir/custom.ipsw
-    echo "Restore has finished! Read above if there are any errors"
-    exit 0
-fi
 
-echo "Restoring using SHSH blob: $SHSH_PATH"
+echo "Restoring stock IPSW using SHSH blob: $SHSH_PATH"
 while true; do
     set +e
-    sudo ./futurerestore/futurerestore -t "$SHSH_PATH" $rsep_flag --latest-sep $updatebb_flag "$restoredir/custom.ipsw"
+    sudo ./futurerestore/futurerestore -t "$SHSH_PATH" $rsep_flag --latest-sep $updatebb_flag "$IPSW_PATH"
     EXIT_CODE=$?
     set -e
     if [[ $EXIT_CODE -eq 139 ]]; then
