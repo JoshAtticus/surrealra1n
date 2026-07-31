@@ -2928,6 +2928,25 @@ fi
 pwn_device
 det_rsep_flag
 
+GENERATOR=$(extract_generator "$SHSH_PATH")
+if [[ -n "$GENERATOR" ]]; then
+    echo "Extracted generator from blob: $GENERATOR"
+    echo "Building generator-patched iBSS..."
+    KEY_FILE="keys/$IDENTIFIER.txt"
+    IBSS_KEY=$(grep "ibss-$VERSION:" "$KEY_FILE" 2>/dev/null | cut -d':' -f2 | xargs || true)
+    rm -rf work
+    mkdir -p work
+    mkdir -p boot/$IDENTIFIER
+    unzip -j "$IPSW_PATH" "Firmware/dfu/*iBSS*" -d work
+    IBSS_FILE=$(ls work/*iBSS* 2>/dev/null | head -n 1)
+    if [[ -n "$IBSS_FILE" && -n "$IBSS_KEY" ]]; then
+        ./bin/img4 -i "$IBSS_FILE" -o work/iBSS.raw -k "$IBSS_KEY"
+        ./bin/iBootPatch work/iBSS.raw boot/$IDENTIFIER/iBSS.patch -g "$GENERATOR"
+        echo "Successfully patched iBSS with generator $GENERATOR"
+    fi
+    rm -rf work
+fi
+
 curl -L -o bin/liter8ctl https://github.com/ahmadkamal09999-tech/usbliter8/raw/refs/heads/main/usbliter8ctl
 if [[ $dist == 1 || $dist == 2 || $dist == 5 ]]; then
     python3 bin/liter8ctl boot boot/$IDENTIFIER/iBSS.patch || true
@@ -2951,22 +2970,10 @@ else
 fi
 APNONCE=$(./bin/irecovery -q | grep "^NONC:" | cut -d ':' -f2 | xargs)
 ECID=$(./bin/irecovery -q | grep "^ECID:" | cut -d ':' -f2 | xargs)
-GENERATOR=$(extract_generator "$SHSH_PATH")
-echo "Original Device APNonce: $APNONCE"
+echo "Device APNonce: $APNONCE"
 echo "Device ECID: $ECID"
 if [[ -n "$GENERATOR" ]]; then
-    echo "Setting nonce in NVRAM, blob generator: $GENERATOR"
-    ./bin/irecovery -c "setenv com.apple.System.boot-nonce $GENERATOR"
-    ./bin/irecovery -c "saveenv"
-    ./bin/irecovery -c "setenv auto-boot false"
-    ./bin/irecovery -c "saveenv"
-    sleep 4
-    ./bin/irecovery -c "reboot" || true
-    sleep 6
-    APNONCE=$(./bin/irecovery -q | grep "^NONC:" | cut -d ':' -f2 | xargs 2>/dev/null || true)
-    if [[ -n "$APNONCE" ]]; then
-        echo "Updated Device APNonce: $APNONCE"
-    fi
+    echo "Blob Generator: $GENERATOR"
 fi
 mkdir -p boot
 echo "$VERSION" > boot/$ECID.txt
