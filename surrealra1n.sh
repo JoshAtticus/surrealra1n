@@ -2878,14 +2878,6 @@ if [[ ! -f "$SHSH_PATH" ]]; then
     echo "SHSH blob does not exist: $SHSH_PATH"
     exit 1
 fi
-if [[ -z "$IPSW_PATH_LATEST" ]]; then
-    echo "Latest/Base IPSW is not selected. Aborting."
-    exit 1
-fi
-if [[ ! -f "$IPSW_PATH_LATEST" ]]; then
-    echo "Latest/Base IPSW does not exist: $IPSW_PATH_LATEST"
-    exit 1
-fi
 
 if [[ $IDENTIFIER == iPhone11,4 ]] && [[ $VERSION == 14.1* ]]; then
     echo "14.1 downgrades are not supported on this device"
