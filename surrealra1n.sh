@@ -1559,7 +1559,7 @@ reset_restore_vars() {
 extract_generator() {
     local blob_path="$1"
     if [[ -n "$blob_path" && -f "$blob_path" ]]; then
-        (grep -A1 "<key>generator</key>" "$blob_path" 2>/dev/null | grep -o '0x[0-9a-fA-F]*' 2>/dev/null | head -n 1) || true
+        python3 -c "import re; f=open('''$blob_path''', 'rb').read().decode('utf-8', 'ignore'); m=re.search(r'<key>generator</key>\s*<string>(0x[0-9a-fA-F]+)</string>', f); print(m.group(1) if m else '')" 2>/dev/null || true
     fi
 }
 
